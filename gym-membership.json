@@ -1,0 +1,105 @@
+{
+ "name": "Gym membership",
+ "notes": "Members join through adverts and word of mouth and leave after a while.",
+ "sim": {
+  "start": 0,
+  "stop": 36,
+  "dt": 0.25,
+  "unit": "months"
+ },
+ "elements": [
+  {
+   "type": "stock",
+   "name": "Potential_Members",
+   "eq": 5000,
+   "units": "people"
+  },
+  {
+   "type": "stock",
+   "name": "Members",
+   "eq": 100,
+   "units": "people"
+  },
+  {
+   "type": "stock",
+   "name": "Former_Members",
+   "eq": 0,
+   "units": "people"
+  },
+  {
+   "type": "flow",
+   "name": "Joining",
+   "from": "Potential_Members",
+   "to": "Members",
+   "eq": "Potential_Members*(Ad_Effect + Members*Word_of_Mouth/Total_Population)",
+   "units": "people/month"
+  },
+  {
+   "type": "flow",
+   "name": "Leaving",
+   "from": "Members",
+   "to": "Former_Members",
+   "eq": "Members/Average_Stay",
+   "units": "people/month"
+  },
+  {
+   "type": "converter",
+   "name": "Ad_Effect",
+   "eq": 0.01,
+   "units": "per month",
+   "slider": {
+    "min": 0,
+    "max": 0.05,
+    "kind": "decision"
+   },
+   "doc": "Share of potential members an advert brings in each month."
+  },
+  {
+   "type": "converter",
+   "name": "Word_of_Mouth",
+   "eq": 0.3,
+   "units": "per month",
+   "slider": {
+    "min": 0,
+    "max": 1,
+    "kind": "assumption"
+   }
+  },
+  {
+   "type": "converter",
+   "name": "Total_Population",
+   "eq": "Potential_Members + Members + Former_Members",
+   "units": "people"
+  },
+  {
+   "type": "converter",
+   "name": "Average_Stay",
+   "eq": 14,
+   "units": "months",
+   "slider": {
+    "min": 3,
+    "max": 36,
+    "step": 1,
+    "kind": "assumption"
+   }
+  }
+ ],
+ "summary": {
+  "kpis": [
+   {
+    "name": "Members",
+    "agg": "final",
+    "label": "Members after 3 years",
+    "better": "high"
+   }
+  ]
+ },
+ "scenarios": [
+  {
+   "name": "No adverts",
+   "values": {
+    "Ad_Effect": 0
+   }
+  }
+ ]
+}

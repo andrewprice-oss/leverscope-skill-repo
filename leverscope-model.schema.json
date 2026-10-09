@@ -1,0 +1,363 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://leverscope.com/schema/leverscope-model.schema.json",
+ "title": "LeverScope model",
+ "description": "A system dynamics (stock-and-flow) model that LeverScope (https://leverscope.com) opens and simulates in the browser. Open it with https://leverscope.com/app/#model=<base64url of the raw-DEFLATE-compressed JSON>, https://leverscope.com/app/#json=<URL-encoded JSON>, or paste it at https://leverscope.com/app/#paste. Positions are optional: LeverScope lays the map out. Files exported from LeverScope (format stockflow-1) are also accepted. Guide: https://leverscope.com/for-ai.html",
+ "type": "object",
+ "required": [
+  "elements"
+ ],
+ "properties": {
+  "format": {
+   "enum": [
+    "stockflow-1"
+   ],
+   "description": "Only in files exported from LeverScope; omit when writing a model by hand."
+  },
+  "name": {
+   "type": "string",
+   "maxLength": 200
+  },
+  "notes": {
+   "type": "string",
+   "maxLength": 20000,
+   "description": "What the model is about and what to try."
+  },
+  "sim": {
+   "type": "object",
+   "properties": {
+    "start": {
+     "type": "number",
+     "default": 0
+    },
+    "stop": {
+     "type": "number",
+     "default": 100
+    },
+    "dt": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "default": 0.25,
+     "description": "Time step; at most a quarter of the shortest time constant in the model."
+    },
+    "unit": {
+     "type": "string",
+     "default": "months",
+     "examples": [
+      "days",
+      "weeks",
+      "months",
+      "quarters",
+      "years",
+      "hours",
+      "minutes"
+     ]
+    }
+   }
+  },
+  "elements": {
+   "type": "array",
+   "maxItems": 400,
+   "items": {
+    "oneOf": [
+     {
+      "type": "object",
+      "title": "Stock",
+      "description": "Something that accumulates. Changes only through flows.",
+      "required": [
+       "type",
+       "name"
+      ],
+      "properties": {
+       "name": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_ ]*$",
+        "maxLength": 80,
+        "description": "Letters, digits and underscores (spaces are turned into underscores). Refer to it in equations with underscores. Not case-sensitive."
+       },
+       "units": {
+        "type": "string",
+        "maxLength": 60
+       },
+       "doc": {
+        "type": "string",
+        "maxLength": 2000,
+        "description": "What the element means, in one or two sentences."
+       },
+       "id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,40}$"
+       },
+       "x": {
+        "type": "number"
+       },
+       "y": {
+        "type": "number"
+       },
+       "type": {
+        "const": "stock"
+       },
+       "eq": {
+        "oneOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string",
+          "maxLength": 4000
+         }
+        ],
+        "description": "Starting value (a number or a formula of constants)."
+       },
+       "nonneg": {
+        "type": "boolean",
+        "default": true,
+        "description": "Cannot go below zero."
+       }
+      }
+     },
+     {
+      "type": "object",
+      "title": "Flow",
+      "description": "A rate per time unit that fills or drains stocks.",
+      "required": [
+       "type",
+       "name",
+       "eq"
+      ],
+      "properties": {
+       "name": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_ ]*$",
+        "maxLength": 80,
+        "description": "Letters, digits and underscores (spaces are turned into underscores). Refer to it in equations with underscores. Not case-sensitive."
+       },
+       "units": {
+        "type": "string",
+        "maxLength": 60
+       },
+       "doc": {
+        "type": "string",
+        "maxLength": 2000,
+        "description": "What the element means, in one or two sentences."
+       },
+       "id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,40}$"
+       },
+       "x": {
+        "type": "number"
+       },
+       "y": {
+        "type": "number"
+       },
+       "type": {
+        "const": "flow"
+       },
+       "eq": {
+        "oneOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string",
+          "maxLength": 4000
+         }
+        ],
+        "description": "Amount per time unit, e.g. Members/Average_Stay."
+       },
+       "from": {
+        "type": [
+         "string",
+         "null"
+        ],
+        "description": "Name of the stock it drains, or null for outside the model."
+       },
+       "to": {
+        "type": [
+         "string",
+         "null"
+        ],
+        "description": "Name of the stock it fills, or null for outside the model."
+       },
+       "biflow": {
+        "type": "boolean",
+        "default": false,
+        "description": "May flow both ways (negative values reverse it)."
+       }
+      }
+     },
+     {
+      "type": "object",
+      "title": "Converter",
+      "description": "A constant or a calculation.",
+      "required": [
+       "type",
+       "name",
+       "eq"
+      ],
+      "properties": {
+       "name": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_ ]*$",
+        "maxLength": 80,
+        "description": "Letters, digits and underscores (spaces are turned into underscores). Refer to it in equations with underscores. Not case-sensitive."
+       },
+       "units": {
+        "type": "string",
+        "maxLength": 60
+       },
+       "doc": {
+        "type": "string",
+        "maxLength": 2000,
+        "description": "What the element means, in one or two sentences."
+       },
+       "id": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_-]{1,40}$"
+       },
+       "x": {
+        "type": "number"
+       },
+       "y": {
+        "type": "number"
+       },
+       "type": {
+        "enum": [
+         "converter",
+         "aux"
+        ]
+       },
+       "eq": {
+        "oneOf": [
+         {
+          "type": "number"
+         },
+         {
+          "type": "string",
+          "maxLength": 4000
+         }
+        ],
+        "description": "A number or a formula, e.g. Potential_Members + Members or LOOKUP(Price, 20,1.2, 40,0.6)."
+       },
+       "slider": {
+        "oneOf": [
+         {
+          "type": "boolean"
+         },
+         {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+           "min": {
+            "type": "number"
+           },
+           "max": {
+            "type": "number"
+           },
+           "step": {
+            "type": "number",
+            "exclusiveMinimum": 0
+           },
+           "kind": {
+            "enum": [
+             "decision",
+             "assumption"
+            ],
+            "description": "decision: something the user controls; assumption: something uncertain"
+           }
+          }
+         }
+        ],
+        "description": "Show this converter as a slider. true chooses a range automatically. Only for converters whose eq is a plain number."
+       }
+      }
+     }
+    ]
+   }
+  },
+  "plots": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "description": "Element names to chart first (default: the stocks)."
+  },
+  "summary": {
+   "type": "object",
+   "properties": {
+    "kpis": {
+     "type": "array",
+     "maxItems": 8,
+     "items": {
+      "type": "object",
+      "required": [
+       "name"
+      ],
+      "properties": {
+       "name": {
+        "type": "string",
+        "description": "Element name."
+       },
+       "agg": {
+        "enum": [
+         "final",
+         "total",
+         "avg",
+         "initial",
+         "peryear",
+         "lastyear"
+        ],
+        "default": "final"
+       },
+       "label": {
+        "type": "string"
+       },
+       "better": {
+        "enum": [
+         "high",
+         "low"
+        ],
+        "default": "high"
+       },
+       "format": {
+        "enum": [
+         "num",
+         "eur",
+         "pct"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "scenarios": {
+   "type": "array",
+   "maxItems": 60,
+   "items": {
+    "type": "object",
+    "required": [
+     "name",
+     "values"
+    ],
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "note": {
+      "type": "string"
+     },
+     "values": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "number"
+      },
+      "description": "Slider values by converter name."
+     }
+    }
+   }
+  }
+ },
+ "$comment": "Equation language: + - * / ^ ( ), comparisons = <> < > <= >=, AND OR NOT, IF c THEN a ELSE b, MIN, MAX, SMTH1/SMTH3(input, time), DELAY1/DELAY3(input, time), DELAY(input, time), LOOKUP(x, x1,y1, x2,y2, ...), STEP(height, time), RAMP(slope, time), PULSE(amount, first, interval), SAFEDIV(a, b), NORMAL(mean, sd), RANDOM(min, max), NOISE(mean, cv), SQRT, EXP, LN, LOG10, ABS, ROUND, INT, a MOD b, TIME, DT, STARTTIME, STOPTIME. Nothing in a model is executed as program code."
+}

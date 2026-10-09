@@ -1,0 +1,34 @@
+{
+  "name": "Town reservoir in a dry summer",
+  "notes": "Rain fills the reservoir, the town draws water, and anything above capacity spills. During the dry spell rain drops sharply. The council can switch on a hosepipe ban rule that kicks in when the level (as reported, with a delay) falls below a threshold. Try: ban rule off vs on, and a higher threshold.",
+  "sim": { "start": 0, "stop": 180, "dt": 0.25, "unit": "days" },
+  "elements": [
+    { "type": "stock", "name": "Reservoir", "eq": 9000, "units": "megalitres" },
+    { "type": "flow", "name": "Rain_Inflow", "from": null, "to": "Reservoir", "eq": "Normal_Inflow*(IF TIME >= Dry_Start AND TIME < Dry_Start + Dry_Length THEN Dry_Fraction ELSE 1)", "units": "megalitres/day" },
+    { "type": "flow", "name": "Town_Use", "from": "Reservoir", "to": null, "eq": "Normal_Use*(1 - Ban_Active*Ban_Saving)", "units": "megalitres/day" },
+    { "type": "flow", "name": "Spill", "from": "Reservoir", "to": null, "eq": "MAX(0, Rain_Inflow - Town_Use + (Reservoir - Capacity)/DT)", "units": "megalitres/day", "doc": "Everything above capacity spills over in the same step." },
+    { "type": "converter", "name": "Capacity", "eq": 10000, "units": "megalitres" },
+    { "type": "converter", "name": "Level_Percent", "eq": "100*Reservoir/Capacity", "units": "%" },
+    { "type": "converter", "name": "Reported_Level", "eq": "SMTH1(Level_Percent, Reporting_Delay)", "units": "%", "doc": "The level the council sees, after measuring and meeting." },
+    { "type": "converter", "name": "Ban_Active", "eq": "IF Ban_Rule = 1 AND Reported_Level < Ban_Threshold THEN 1 ELSE 0", "units": "0/1" },
+    { "type": "converter", "name": "Normal_Inflow", "eq": 60, "units": "megalitres/day", "slider": { "min": 20, "max": 120, "step": 5, "kind": "assumption" } },
+    { "type": "converter", "name": "Normal_Use", "eq": 55, "units": "megalitres/day", "slider": { "min": 30, "max": 90, "step": 1, "kind": "assumption" } },
+    { "type": "converter", "name": "Dry_Start", "eq": 30, "units": "days" },
+    { "type": "converter", "name": "Dry_Length", "eq": 90, "units": "days", "slider": { "min": 0, "max": 150, "step": 5, "kind": "assumption" } },
+    { "type": "converter", "name": "Dry_Fraction", "eq": 0.15, "units": "share of normal rain", "slider": { "min": 0, "max": 1, "step": 0.05, "kind": "assumption" } },
+    { "type": "converter", "name": "Ban_Rule", "eq": 1, "slider": { "min": 0, "max": 1, "step": 1, "kind": "decision" }, "doc": "1 = the council imposes a ban below the threshold." },
+    { "type": "converter", "name": "Ban_Threshold", "eq": 50, "units": "%", "slider": { "min": 10, "max": 90, "step": 5, "kind": "decision" } },
+    { "type": "converter", "name": "Ban_Saving", "eq": 0.2, "units": "share of use", "slider": { "min": 0, "max": 0.5, "step": 0.05, "kind": "assumption" } },
+    { "type": "converter", "name": "Reporting_Delay", "eq": 7, "units": "days", "slider": { "min": 1, "max": 28, "step": 1, "kind": "assumption" } }
+  ],
+  "plots": ["Reservoir", "Reported_Level", "Ban_Active", "Spill"],
+  "summary": { "kpis": [
+    { "name": "Reservoir", "agg": "final", "label": "Water left after 6 months", "better": "high" },
+    { "name": "Ban_Active", "agg": "total", "label": "Days under hosepipe ban", "better": "low" },
+    { "name": "Spill", "agg": "total", "label": "Water spilled", "better": "low" }
+  ] },
+  "scenarios": [
+    { "name": "No ban", "values": { "Ban_Rule": 0 } },
+    { "name": "Early ban at 70%", "values": { "Ban_Threshold": 70 } }
+  ]
+}

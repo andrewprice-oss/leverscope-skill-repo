@@ -1,0 +1,36 @@
+{
+  "name": "Onlineshop Lager mit Mindestbestand",
+  "notes": "Nachbestellung, sobald der Bestand unter den Mindestbestand fällt; Lieferung kommt nach der Lieferzeit. Die Nachfrage schwankt saisonal. Probieren Sie: Schalter 'Offene Bestellungen mitzählen' aus und an – und eine kürzere Lieferzeit.",
+  "sim": { "start": 0, "stop": 104, "dt": 0.25, "unit": "weeks" },
+  "elements": [
+    { "type": "stock", "name": "Lager", "eq": 300, "units": "Stück", "doc": "Ware, die sofort verkauft werden kann." },
+    { "type": "stock", "name": "Offene_Bestellungen", "eq": 0, "units": "Stück", "doc": "Bestellt, aber noch nicht geliefert." },
+    { "type": "stock", "name": "Verpasste_Verkaeufe", "eq": 0, "units": "Stück", "doc": "Nachfrage, die wegen leerem Lager nicht bedient wurde (kumuliert)." },
+    { "type": "flow", "name": "Bestellen", "from": null, "to": "Offene_Bestellungen",
+      "eq": "IF Bestandsposition < Mindestbestand THEN (Mindestbestand + Bestellmenge - Bestandsposition)/DT ELSE 0",
+      "units": "Stück/Woche", "doc": "Bei Unterschreiten des Mindestbestands wird auf Mindestbestand plus Bestellmenge aufgefüllt." },
+    { "type": "flow", "name": "Liefern", "from": "Offene_Bestellungen", "to": "Lager",
+      "eq": "DELAY(Bestellen, Lieferzeit, 0)", "units": "Stück/Woche", "doc": "Bestellungen kommen nach der Lieferzeit an." },
+    { "type": "flow", "name": "Verkauf", "from": "Lager", "to": null,
+      "eq": "MIN(Nachfrage, Lager/DT)", "units": "Stück/Woche" },
+    { "type": "flow", "name": "Fehlverkauf", "from": null, "to": "Verpasste_Verkaeufe",
+      "eq": "Nachfrage - Verkauf", "units": "Stück/Woche" },
+    { "type": "converter", "name": "Nachfrage", "eq": "Grundnachfrage*(1 + Saisonstaerke*SIN(2*3.14159*TIME/52))", "units": "Stück/Woche", "doc": "Saisonale Nachfrage mit einem Jahreszyklus." },
+    { "type": "converter", "name": "Bestandsposition", "eq": "Lager + (IF Offene_Bestellungen_mitzaehlen = 1 THEN Offene_Bestellungen ELSE 0)", "units": "Stück", "doc": "Worauf die Bestellregel schaut." },
+    { "type": "converter", "name": "Grundnachfrage", "eq": 50, "units": "Stück/Woche", "slider": { "min": 10, "max": 150, "step": 5, "kind": "assumption" } },
+    { "type": "converter", "name": "Saisonstaerke", "eq": 0.4, "units": "Anteil", "slider": { "min": 0, "max": 0.8, "step": 0.05, "kind": "assumption" } },
+    { "type": "converter", "name": "Lieferzeit", "eq": 3, "units": "Wochen", "slider": { "min": 1, "max": 8, "step": 1, "kind": "assumption" } },
+    { "type": "converter", "name": "Mindestbestand", "eq": 150, "units": "Stück", "slider": { "min": 0, "max": 500, "step": 10, "kind": "decision" } },
+    { "type": "converter", "name": "Bestellmenge", "eq": 200, "units": "Stück", "slider": { "min": 50, "max": 600, "step": 10, "kind": "decision" } },
+    { "type": "converter", "name": "Offene_Bestellungen_mitzaehlen", "eq": 0, "slider": { "min": 0, "max": 1, "step": 1, "kind": "decision" }, "doc": "0 = nur Lager zählt, 1 = Lager plus bereits Bestelltes." }
+  ],
+  "plots": ["Lager", "Offene_Bestellungen", "Nachfrage"],
+  "summary": { "kpis": [
+    { "name": "Verpasste_Verkaeufe", "agg": "final", "label": "Verpasste Verkäufe (2 Jahre)", "better": "low" },
+    { "name": "Lager", "agg": "avg", "label": "Durchschnittlicher Lagerbestand", "better": "low" }
+  ] },
+  "scenarios": [
+    { "name": "Offene Bestellungen mitzählen", "values": { "Offene_Bestellungen_mitzaehlen": 1 } },
+    { "name": "Schnellere Lieferung (1 Woche)", "values": { "Lieferzeit": 1 } }
+  ]
+}
